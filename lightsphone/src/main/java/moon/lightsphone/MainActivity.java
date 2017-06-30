@@ -1,6 +1,5 @@
 package moon.lightsphone;
 
-import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.v7.app.AppCompatActivity;
@@ -17,12 +16,13 @@ public class MainActivity extends AppCompatActivity implements BaseToggleActivit
     private ToggleButton tb;
 
     //m = new MyClientTask("192.168.1.126", 9875);
-    MyClientTask m = new MyClientTask(this, "192.168.1.101", 10150);
+    MyClientTask m;
 
+    //Kill networking when we go out of focus
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        //m.cancel(true);
+        MyClientTask.killAll();
     }
 
     @Override
@@ -31,14 +31,6 @@ public class MainActivity extends AppCompatActivity implements BaseToggleActivit
         setContentView(R.layout.activity_main);
 
         tb = (ToggleButton) findViewById(R.id.toggleButton);
-
-        //Set status of toggle on resume
-        if (m.getState().equals("ON")) {
-            setToggle(true);
-        }
-        else {
-            setToggle(false);
-        }
 
         tb.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -61,8 +53,17 @@ public class MainActivity extends AppCompatActivity implements BaseToggleActivit
 
         try {
             //Only start a new task if it's not already running
-            if ((m == null) || (m.getStatus() != AsyncTask.Status.RUNNING)) {
-                 m.execute();
+            if ((m == null) || !m.isConnected()) {
+                m = new MyClientTask(this, "192.168.1.101", 10150);
+                m.execute();
+            }
+
+            //Set status of toggle on resume/create
+            if (m.getState().equals("ON")) {
+                setToggle(true);
+            }
+            else {
+                setToggle(false);
             }
         }
         catch (Exception e) {
@@ -81,5 +82,10 @@ public class MainActivity extends AppCompatActivity implements BaseToggleActivit
                 tb.setChecked(b);
             }
         });
+    }
+
+    //Gets the activity type
+    public String getType() {
+        return "WEARABLE";
     }
 }

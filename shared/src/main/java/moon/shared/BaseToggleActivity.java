@@ -6,4 +6,5 @@ package moon.shared;
 
 public interface BaseToggleActivity {
     void setToggle(boolean toggle);
+    String getType();
 }
