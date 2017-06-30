@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/Lights.iml" filepath="$PROJECT_DIR$/Lights.iml" />
+      <module fileurl="file://$PROJECT_DIR$/lightsphone/lightsphone.iml" filepath="$PROJECT_DIR$/lightsphone/lightsphone.iml" />
+      <module fileurl="file://$PROJECT_DIR$/lightswear/lightswear.iml" filepath="$PROJECT_DIR$/lightswear/lightswear.iml" />
+      <module fileurl="file://$PROJECT_DIR$/shared/shared.iml" filepath="$PROJECT_DIR$/shared/shared.iml" />
+    </modules>
+  </component>
+</project>
