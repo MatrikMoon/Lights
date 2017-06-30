@@ -22,7 +22,7 @@ public class MainActivity extends AppCompatActivity implements BaseToggleActivit
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        m.cancel(true);
+        //m.cancel(true);
     }
 
     @Override

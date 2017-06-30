@@ -27,6 +27,8 @@ public class MyClientTask extends AsyncTask<Void, Void, Void> {
 
     private boolean connected = false;
 
+    private int allowedTries = 1;
+
     public MyClientTask(BaseToggleActivity act, String addr, int port){
         this.activity = act;
         this.dstAddress = addr;
@@ -68,9 +70,10 @@ public class MyClientTask extends AsyncTask<Void, Void, Void> {
                 }
             };
             mThread.start();
-            return;
         }
-        low_send(string);
+        else {
+            low_send(string);
+        }
     }
 
     //Low send is a method to make the send() method more concise. Do not use.
@@ -83,11 +86,14 @@ public class MyClientTask extends AsyncTask<Void, Void, Void> {
         }
     }
 
-    @SuppressWarnings("")
+    @SuppressWarnings("all") //Suppress while loop warning
     @Override
     protected Void doInBackground(Void... arg0) {
-        boolean cont = true;
-        while(cont) { //if the connection dies, connect again
+        //This object needs to survive indefinitely, but not drag down the system by looping infinitely.
+        //allowedTries can be incremented outside this method to allow it to continue at necessary times
+        int loops = 0;
+        //while (loops < allowedTries) {
+        while (true) {
             try {
                 int tries = 0;
                 while (!connected) {
@@ -95,8 +101,7 @@ public class MyClientTask extends AsyncTask<Void, Void, Void> {
                         Log.i(dstAddress, Integer.toString(dstPort));
                         socket = new Socket(dstAddress, dstPort);
                         connected = true;
-                    }
-                    catch (Exception e) {
+                    } catch (Exception e) {
                         tries++;
                         e.printStackTrace();
 
@@ -107,41 +112,35 @@ public class MyClientTask extends AsyncTask<Void, Void, Void> {
                     }
                 }
 
-                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(65535);
-                byte[] buffer = new byte[65535];
-
-                int bytesRead;
-                InputStream inputStream = socket.getInputStream();
-                this.os = new BufferedOutputStream( socket.getOutputStream() );
-
-                //Request current status
+                //If connected, do things
                 if (connected) {
+                    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(65535);
+                    byte[] buffer = new byte[65535];
+
+                    int bytesRead;
+                    InputStream inputStream = socket.getInputStream();
+                    this.os = new BufferedOutputStream(socket.getOutputStream());
+
+                    //Request current status
                     send("REQUEST_STATUS");
-                }
 
-					/*
-					 * notice:
-					 * inputStream.read() will block if no data return
-					 */
-                while ((bytesRead = inputStream.read(buffer)) != -1){
-                    byteArrayOutputStream.write(buffer, 0, bytesRead);
-                    String response = byteArrayOutputStream.toString("UTF-8");
-                    try {
-                        String[] s = response.split("<EOF>");
-                        parseCommands(s[0]);
+                    //Receive data
+                    while ((bytesRead = inputStream.read(buffer)) != -1) {
+                        byteArrayOutputStream.write(buffer, 0, bytesRead);
+                        String response = byteArrayOutputStream.toString("UTF-8");
+                        try {
+                            String[] s = response.split("<EOF>");
+                            parseCommands(s[0]);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        byteArrayOutputStream.reset();
                     }
-                    catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    byteArrayOutputStream.reset();
                 }
-
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
-            }
-            finally {
-                if (socket != null){
+            } finally {
+                if (socket != null) {
                     try {
                         socket.close();
                     } catch (IOException e) {
@@ -150,13 +149,11 @@ public class MyClientTask extends AsyncTask<Void, Void, Void> {
                 }
             }
         }
-        return null;
+        //return null;
     }
 
     @Override
     protected void onPostExecute(Void result) {
-        //textResponse.setText(response);
         super.onPostExecute(result);
-        //toast(response);
     }
 }

@@ -18,12 +18,26 @@ public class MainActivity extends WearableActivity implements BaseToggleActivity
     private BoxInsetLayout mContainerView;
     private ToggleButton tb;
 
+    //m = new MyClientTask("192.168.1.126", 9875);
     MyClientTask m;
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        m.cancel(true);
+        Log.i("ONDESTROY", "ONDESTROY");
+        //m.cancel(true);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.i("ONPAUSE", "ONPAUSE");
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.i("ONRESUME", "ONRESUME");
     }
 
     @Override
@@ -34,14 +48,6 @@ public class MainActivity extends WearableActivity implements BaseToggleActivity
 
         mContainerView = (BoxInsetLayout) findViewById(R.id.container);
         tb = (ToggleButton) findViewById(R.id.toggleButton);
-
-        //Set status of toggle on resume
-        if (m.getState().equals("ON")) {
-            setToggle(true);
-        }
-        else {
-            setToggle(false);
-        }
 
         tb.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -63,11 +69,26 @@ public class MainActivity extends WearableActivity implements BaseToggleActivity
         });
 
         try {
+
+            Log.i("M NULL", (m == null ? "TRUE" : "FALSE"));
+            if (m != null) {
+                Log.i("M NOT RUNNING", (m.getStatus() != AsyncTask.Status.RUNNING ? "TRUE" : "FALSE"));
+                Log.i("M NOT CONNECTED", (!m.isConnected() ? "TRUE" : "FALSE"));
+            }
+
             //Only start a new task if it's not already running
-            if ((m == null) || (m.getStatus() != AsyncTask.Status.RUNNING)) {
-                //m = new MyClientTask("192.168.1.126", 9875);
+            if ((m == null) || (m.getStatus() != AsyncTask.Status.RUNNING) || !m.isConnected()) {
                 m = new MyClientTask(this, "192.168.1.101", 10150);
                 m.execute();
+                Log.i("NEW TASK", "CREATED");
+            }
+
+            //Set status of toggle on resume/create
+            if (m.getState().equals("ON")) {
+                setToggle(true);
+            }
+            else {
+                setToggle(false);
             }
         }
         catch (Exception e) {
