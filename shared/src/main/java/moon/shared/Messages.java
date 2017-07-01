@@ -42,8 +42,6 @@ public class Messages implements MessageApi.MessageListener {
         Wearable.MessageApi.addListener(mGoogleApiClient, this);
     }
 
-    /*
-
     public boolean isConnected() {
         return mGoogleApiClient.isConnected();
     }
@@ -69,7 +67,6 @@ public class Messages implements MessageApi.MessageListener {
                 }
             }
         }).start();
-
     }
 
     private Collection<String> getNodes() {
@@ -84,17 +81,17 @@ public class Messages implements MessageApi.MessageListener {
 
     @Override
     public void onMessageReceived(MessageEvent messageEvent) {
-        Log.i("MessageReceived", messageEvent.getPath());
         if (messageEvent.getPath().equals(API_PATH)) {
-            Log.i("onReceived", new String(messageEvent.getData()));
 
+            //If we're the phone, we're receiving data from the watch. Send it to the server!
             if (m.getType().equals("PHONE")) {
-
+                m.send(new String(messageEvent.getData()));
             }
+
+            //If we're the watch, we're receiving data from the phone. Parse it!
             else if (m.getType().equals("WEARABLE")) {
                 m.parseCommands(new String(messageEvent.getData()));
             }
         }
     }
-    */
 }

@@ -22,8 +22,6 @@ public class MainActivity extends WearableActivity implements BaseToggleActivity
     //m = new MyClientTask("192.168.1.126", 9875);
     MyClientTask m;
 
-    Messages mes;
-
     //Kill networking when we go out of focus
     @Override
     protected void onDestroy() {
@@ -59,17 +57,11 @@ public class MainActivity extends WearableActivity implements BaseToggleActivity
             }
         });
 
-        /*
         try {
             //Only start a new task if it's not already running
             if ((m == null) || !m.isConnected()) {
                 m = new MyClientTask(this, "192.168.1.101", 10150);
                 m.execute();
-
-                mes = new Messages(m);
-                mes.connect(this);
-
-                m.m = mes;
 
                 Log.i("NEW TASK", "CREATED");
             }
@@ -85,7 +77,6 @@ public class MainActivity extends WearableActivity implements BaseToggleActivity
         catch (Exception e) {
             e.printStackTrace();
         }
-        */
     }
 
 

@@ -102,6 +102,10 @@ public class MyClientTask {
 
     //Review and act on commands received from the server
     public void parseCommands(String response) {
+        //If we're the phone, broadcast the message off to a potential awaiting watch
+        if (getType().equals("PHONE")) {
+            m.send(response);
+        }
         if (response.equals("ON")) {
             activity.setToggle(true);
         }
@@ -205,8 +209,8 @@ public class MyClientTask {
                     //If we're a wearable connected through a phone, let's set that up
                     if (wearableFallback) {
                         Log.i("CONNECT", "STARTING COMMUNICATION THROUGH MESSAGEAPI");
-                        //m = new Messages(instance);
-                        //m.connect((Activity)instance.activity);
+                        m = new Messages(instance);
+                        m.connect((Activity)instance.activity);
 
                         try {
                             Thread.sleep(5000);

@@ -5,7 +5,7 @@ android {
     buildToolsVersion "25.0.2"
 
     defaultConfig {
-        applicationId "moon.lightsphone"
+        applicationId "moon.lights"
         minSdkVersion 21
         targetSdkVersion 25
         versionCode 1
