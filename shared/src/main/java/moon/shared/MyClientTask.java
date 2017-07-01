@@ -1,6 +1,6 @@
 package moon.shared;
 
-import android.os.AsyncTask;
+import android.app.Activity;
 import android.os.Looper;
 import android.util.Log;
 
@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.concurrent.Exchanger;
 
 /**
  * Created by Moon on 6/29/2017.
@@ -29,6 +30,9 @@ public class MyClientTask {
 
     private boolean connected = false;
     private boolean cancelled = false;
+    private boolean wearableFallback = false;
+
+    public Messages m;
 
     private static ArrayList<MyClientTask> instances = new ArrayList<>();
 
@@ -37,6 +41,13 @@ public class MyClientTask {
         this.dstAddress = addr;
         this.dstPort = port;
         instances.add(this);
+
+        //If this is a phone, let's go ahead and get the MessageApi up and running so we're ready for any
+        //incoming-devices-to-be
+        if (activity.getType().equals("PHONE")) {
+            m = new Messages(this);
+            m.connect((Activity)activity);
+        }
     }
 
     //Get connction state
@@ -52,6 +63,11 @@ public class MyClientTask {
     //Set state
     public void setState(String state) {
         this.state = state;
+    }
+
+    //Return the typ eof
+    public String getType() {
+        return activity.getType();
     }
 
     private void receive(final InputStream is) {
@@ -85,7 +101,7 @@ public class MyClientTask {
     }
 
     //Review and act on commands received from the server
-    private void parseCommands(String response) {
+    public void parseCommands(String response) {
         if (response.equals("ON")) {
             activity.setToggle(true);
         }
@@ -96,17 +112,28 @@ public class MyClientTask {
 
     //Send command to the server
     public void send(final String string){
-        if (Looper.myLooper() == Looper.getMainLooper()) {
-            Thread mThread = new Thread() {
-                @Override
-                public void run() {
-                    low_send(string);
-                }
-            };
-            mThread.start();
+        //If we're using MessageApi, send it as such
+        if (wearableFallback) {
+            if ((m == null) || !m.isConnected()) {
+                m = new Messages(this);
+                m.connect((Activity)activity); //Cast activity to activity. Can't seem to figure out how to do it another way while leaving
+                                                //the specific types of activities alone in the MainActivity files
+            }
+            m.send(string);
         }
+        //If not, do it the normal way
         else {
-            low_send(string);
+            if (Looper.myLooper() == Looper.getMainLooper()) {
+                Thread mThread = new Thread() {
+                    @Override
+                    public void run() {
+                        low_send(string);
+                    }
+                };
+                mThread.start();
+            } else {
+                low_send(string);
+            }
         }
     }
 
@@ -122,11 +149,12 @@ public class MyClientTask {
 
     //@SuppressWarnings("all") //Suppress while loop warning
     public void execute() {
+        final MyClientTask instance = this;
         Thread startThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    while (!cancelled && !connected) {
+                    while (!cancelled && !connected && !wearableFallback) {
                         try {
                             Log.i(dstAddress, Integer.toString(dstPort));
 
@@ -143,10 +171,19 @@ public class MyClientTask {
                             connected = true;
                         } catch (Exception e) {
                             e.printStackTrace();
-                            try {
-                                Thread.sleep(10000);
-                            } catch (Exception ex) {
-                                e.printStackTrace();
+                            if (e instanceof java.net.ConnectException && activity.getType().equals("WEARABLE")) {
+                                //There must be no connection to the phone OR the network in this case
+                                //We're screwed
+                            }
+                            if (e instanceof java.net.SocketTimeoutException && activity.getType().equals("WEARABLE")) {
+                                wearableFallback = true;
+                            }
+                            else {
+                                try {
+                                    Thread.sleep(10000);
+                                } catch (Exception ex) {
+                                    e.printStackTrace();
+                                }
                             }
                         }
                     }
@@ -163,6 +200,20 @@ public class MyClientTask {
 
                         //Receive data
                         receive(inputStream);
+                    }
+
+                    //If we're a wearable connected through a phone, let's set that up
+                    if (wearableFallback) {
+                        Log.i("CONNECT", "STARTING COMMUNICATION THROUGH MESSAGEAPI");
+                        //m = new Messages(instance);
+                        //m.connect((Activity)instance.activity);
+
+                        try {
+                            Thread.sleep(5000);
+                        }
+                        catch (Exception e) {}
+
+                        send("REQUEST_STATUS");
                     }
                 } catch (IOException e) {
                     e.printStackTrace();

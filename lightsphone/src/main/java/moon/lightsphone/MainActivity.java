@@ -86,6 +86,6 @@ public class MainActivity extends AppCompatActivity implements BaseToggleActivit
 
     //Gets the activity type
     public String getType() {
-        return "WEARABLE";
+        return "PHONE";
     }
 }
