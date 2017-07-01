@@ -37,8 +37,6 @@ public class Messages implements MessageApi.MessageListener {
                 .addApi(Wearable.API)
                 .build();
         mGoogleApiClient.connect();
-        Log.i("LISTENER", "ADDED");
-        Thread.dumpStack();
         Wearable.MessageApi.addListener(mGoogleApiClient, this);
     }
 
@@ -47,7 +45,6 @@ public class Messages implements MessageApi.MessageListener {
     }
 
     public void send(final String s) {
-        Log.i("MESSAGEAPI", "SENDING: " + s);
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -60,7 +57,7 @@ public class Messages implements MessageApi.MessageListener {
                                 Log.i("FAILED", "RESULT");
                             }
                             else if (sendMessageResult.getStatus().isSuccess()) {
-                                Log.i("SUCCESS", node);
+                                //Log.i("SUCCESS", node);
                             }
                         }
                     });

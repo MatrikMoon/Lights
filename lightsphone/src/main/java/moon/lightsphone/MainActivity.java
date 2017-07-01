@@ -1,7 +1,9 @@
 package moon.lightsphone;
 
+import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.Parcelable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -32,6 +34,10 @@ public class MainActivity extends AppCompatActivity implements BaseToggleActivit
 
         tb = (ToggleButton) findViewById(R.id.toggleButton);
 
+        //Sigh, let's get this out of the way
+        watchService.m = this;
+        startService(new Intent(this, watchService.class));
+
         tb.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -56,14 +62,6 @@ public class MainActivity extends AppCompatActivity implements BaseToggleActivit
             if ((m == null) || !m.isConnected()) {
                 m = new MyClientTask(this, "192.168.1.101", 10150);
                 m.execute();
-            }
-
-            //Set status of toggle on resume/create
-            if (m.getState().equals("ON")) {
-                setToggle(true);
-            }
-            else {
-                setToggle(false);
             }
         }
         catch (Exception e) {

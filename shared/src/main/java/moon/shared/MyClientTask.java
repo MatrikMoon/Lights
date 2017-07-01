@@ -1,6 +1,7 @@
 package moon.shared;
 
 import android.app.Activity;
+import android.content.Context;
 import android.os.Looper;
 import android.util.Log;
 
@@ -46,7 +47,7 @@ public class MyClientTask {
         //incoming-devices-to-be
         if (activity.getType().equals("PHONE")) {
             m = new Messages(this);
-            m.connect((Activity)activity);
+            m.connect((Context)activity);
         }
     }
 
