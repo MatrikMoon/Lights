@@ -50,6 +50,11 @@ public class MyClientTask {
         }
     }
 
+    //Pass along debug info
+    public void debugData(String data) {
+        activity.debugData(data);
+    }
+
     //Get connection state
     public boolean isConnected() {
         return connected;
@@ -87,11 +92,13 @@ public class MyClientTask {
                             parseCommands(s[0]);
                         } catch (Exception e) {
                             e.printStackTrace();
+                            ExceptionTools.stackTraceToString(e);
                         }
                         byteArrayOutputStream.reset();
                     }
                     catch (Exception e) {
                         e.printStackTrace();
+                        ExceptionTools.stackTraceToString(e);
                     }
                 }
             }
@@ -105,6 +112,7 @@ public class MyClientTask {
         //If we're the phone, broadcast the message off to a potential awaiting watch
         if (getType().equals("PHONE")) {
             m.send(response);
+            debugData("parseCommands : broadcasting \"" + response + "\" back to watch");
         }
         if (response.equals("ON")) {
             activity.setToggle(true);
@@ -116,6 +124,7 @@ public class MyClientTask {
 
     //Send command to the server
     public void send(final String string){
+        debugData("send : sending \"" + string + "\" to server");
         //If we're using MessageApi, send it as such
         if (wearableFallback) {
             if ((m == null) || !m.isConnected()) {
@@ -148,6 +157,7 @@ public class MyClientTask {
             os.flush();
         } catch (Exception e) {
             e.printStackTrace();
+            ExceptionTools.stackTraceToString(e);
         }
     }
 
@@ -175,6 +185,7 @@ public class MyClientTask {
                             connected = true;
                         } catch (Exception e) {
                             e.printStackTrace();
+                            ExceptionTools.stackTraceToString(e);
                             /*
                             if (e instanceof java.net.ConnectException && getType().equals("WEARABLE")) {
                                 //There must be no connection to the phone OR the network in this case
@@ -189,6 +200,7 @@ public class MyClientTask {
                                     Thread.sleep(10000);
                                 } catch (Exception ex) {
                                     e.printStackTrace();
+                                    ExceptionTools.stackTraceToString(e);
                                 }
                             }
                         }
@@ -210,7 +222,7 @@ public class MyClientTask {
 
                     //If we're a wearable connected through a phone, let's set that up
                     if (wearableFallback) {
-                        Log.i("CONNECT", "STARTING COMMUNICATION THROUGH MESSAGEAPI");
+                        debugData("CONNECT : wearableFallback triggered");
                         m = new Messages(instance);
                         m.connect((Context)instance.activity);
 
@@ -218,6 +230,7 @@ public class MyClientTask {
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
+                    ExceptionTools.stackTraceToString(e);
                 }
             }
         });
@@ -241,6 +254,7 @@ public class MyClientTask {
                 socket.close();
             } catch (IOException e) {
                 e.printStackTrace();
+                ExceptionTools.stackTraceToString(e);
             }
         }
     }

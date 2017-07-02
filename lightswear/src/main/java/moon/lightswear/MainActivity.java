@@ -5,17 +5,19 @@ import android.os.Handler;
 import android.os.Looper;
 import android.support.wearable.activity.WearableActivity;
 import android.support.wearable.view.BoxInsetLayout;
-import android.util.Log;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ToggleButton;
 
 import moon.shared.BaseToggleActivity;
+import moon.shared.ExceptionTools;
 import moon.shared.MyClientTask;
 
 public class MainActivity extends WearableActivity implements BaseToggleActivity {
 
     private BoxInsetLayout mContainerView;
     private ToggleButton tb;
+    private EditText debugText;
 
     MyClientTask m;
 
@@ -34,6 +36,7 @@ public class MainActivity extends WearableActivity implements BaseToggleActivity
 
         mContainerView = findViewById(R.id.container);
         tb = findViewById(R.id.toggleButton);
+        debugText = findViewById(R.id.debugText);
 
         tb.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -50,7 +53,18 @@ public class MainActivity extends WearableActivity implements BaseToggleActivity
                 }
                 catch (Exception e) {
                     e.printStackTrace();
+                    ExceptionTools.stackTraceToString(e);
                 }
+            }
+        });
+
+        tb.setLongClickable(true);
+        tb.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View view) {
+                debugText.setVisibility(View.VISIBLE);
+                debugText.setFocusable(false);
+                return true;
             }
         });
 
@@ -71,7 +85,18 @@ public class MainActivity extends WearableActivity implements BaseToggleActivity
         }
         catch (Exception e) {
             e.printStackTrace();
+            ExceptionTools.stackTraceToString(e);
         }
+    }
+
+    public void debugData(final String data) {
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                debugText.append(data + "\n");
+            }
+        });
     }
 
     //Sets the state of the toggle button
@@ -81,7 +106,7 @@ public class MainActivity extends WearableActivity implements BaseToggleActivity
         handler.post(new Runnable() {
             @Override
             public void run() {
-                Log.i("CHECKED", (b ? "TRUE" : "FALSE"));
+                debugData("CHECKED :" +  (b ? "TRUE" : "FALSE"));
                 tb.setChecked(b);
             }
         });

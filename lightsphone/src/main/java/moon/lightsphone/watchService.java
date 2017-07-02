@@ -16,20 +16,26 @@ import moon.shared.MyClientTask;
 public class watchService extends Service implements BaseToggleActivity {
 
     MainActivity m;
+    static boolean running = false;
+    static watchService w;
 
     //We need a default constructor for AndroidManifest to register this as a service
     @SuppressWarnings("unused")
     public watchService() {
-
+        w = this;
+        running = true;
     }
 
     //Let's add the current activity instance to the service
     public watchService(MainActivity m) {
         this.m = m;
+        w = this;
+        running = true;
     }
 
     //Our own instance of MCT, if there's no foreground running
-    private MyClientTask mct;
+    //FIXME: Why, why, why do I always fall back to using static fields
+    private static MyClientTask mct;
 
     @Override
     public void onCreate() {
@@ -46,6 +52,28 @@ public class watchService extends Service implements BaseToggleActivity {
                 mct = new MyClientTask(this, "192.168.1.101", 10150);
                 mct.execute();
             }
+        }
+    }
+
+    public static watchService getInstance() {
+        return w;
+    }
+
+    public void setParent(MainActivity m) {
+        this.m = m;
+    }
+
+    public static boolean isRunning() {
+        return running;
+    }
+
+    public static MyClientTask getMCT() {
+        return mct;
+    }
+
+    public void debugData(String data) {
+        if (m != null) {
+            m.debugData(data);
         }
     }
 

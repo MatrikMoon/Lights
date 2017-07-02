@@ -5,18 +5,23 @@ import android.os.Handler;
 import android.os.Looper;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.InputType;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ToggleButton;
 
 import moon.shared.BaseToggleActivity;
+import moon.shared.ExceptionTools;
 import moon.shared.MyClientTask;
 
 public class MainActivity extends AppCompatActivity implements BaseToggleActivity {
 
     private ToggleButton tb;
+    private EditText debugText;
+    private Button rebootButton;
 
-    //m = new MyClientTask("192.168.1.126", 9875);
     MyClientTask m;
 
     //Kill networking when we go out of focus
@@ -32,10 +37,26 @@ public class MainActivity extends AppCompatActivity implements BaseToggleActivit
         setContentView(R.layout.activity_main);
 
         tb = (ToggleButton) findViewById(R.id.toggleButton);
+        debugText = (EditText) findViewById(R.id.debugText);
+        rebootButton = (Button) findViewById(R.id.rebootButton);
+
+        rebootButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                m.send("REBOOT");
+            }
+        });
 
         //Sigh, let's get this out of the way
-        watchService w = new watchService(this);
-        startService(new Intent(this, w.getClass()));
+        if (!watchService.isRunning()) {
+            watchService w = new watchService(this);
+            startService(new Intent(this, w.getClass()));
+        }
+        else {
+            m = watchService.getMCT();
+            watchService.getInstance().setParent(this);
+
+        }
 
         tb.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -52,7 +73,19 @@ public class MainActivity extends AppCompatActivity implements BaseToggleActivit
                 }
                 catch (Exception e) {
                     e.printStackTrace();
+                    ExceptionTools.stackTraceToString(e);
                 }
+            }
+        });
+
+        tb.setLongClickable(true);
+        tb.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View view) {
+                debugText.setVisibility(View.VISIBLE);
+                debugText.setFocusable(false);
+                rebootButton.setVisibility(View.VISIBLE);
+                return true;
             }
         });
 
@@ -65,7 +98,18 @@ public class MainActivity extends AppCompatActivity implements BaseToggleActivit
         }
         catch (Exception e) {
             e.printStackTrace();
+            ExceptionTools.stackTraceToString(e);
         }
+    }
+
+    public void debugData(final String data) {
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                debugText.append(data + "\n");
+            }
+        });
     }
 
     //Sets the state of the toggle button

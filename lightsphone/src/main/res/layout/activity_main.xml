@@ -9,17 +9,39 @@
     tools:context="moon.lightsphone.MainActivity">
 
     <LinearLayout
-        android:orientation="horizontal"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:orientation="vertical"
+        android:id="@+id/linearLayout">
+
+        <Button
+            android:id="@+id/rebootButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/linearLayout"
+            android:text="Reboot"
+            android:visibility="gone" />
 
         <ToggleButton
-            android:text="ToggleButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
             android:id="@+id/toggleButton"
-            android:layout_weight="1"
-            android:layout_gravity="center_vertical|center_horizontal" />
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical|center_horizontal"
+            android:text="ToggleButton" />
+
+        <EditText
+            android:id="@+id/debugText"
+            android:layout_width="match_parent"
+            android:layout_height="386dp"
+            android:editable="false"
+            android:ems="10"
+            android:inputType="textMultiLine"
+            android:scrollbars="vertical"
+            android:textSize="10sp"
+            android:visibility="gone" />
+
     </LinearLayout>
 
 </RelativeLayout>

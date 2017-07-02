@@ -10,18 +10,28 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:weightSum="1"
-        android:layout_gravity="center_vertical|center_horizontal"
-        android:gravity="center_vertical|center_horizontal">
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:orientation="vertical"
+        android:weightSum="1">
 
         <ToggleButton
-            android:text="ToggleButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
             android:id="@+id/toggleButton"
-            android:layout_weight="1"
-            android:elevation="1dp" />
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:elevation="1dp"
+            android:text="ToggleButton" />
+
+        <EditText
+            android:id="@+id/debugText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:editable="true"
+            android:ems="10"
+            android:inputType="textMultiLine"
+            android:scrollbars="vertical"
+            android:textSize="10sp"
+            android:visibility="gone" />
     </LinearLayout>
 
 </android.support.wearable.view.BoxInsetLayout>

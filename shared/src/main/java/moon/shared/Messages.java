@@ -40,6 +40,7 @@ class Messages implements MessageApi.MessageListener {
                     .build();
             mGoogleApiClient.connect();
             Wearable.MessageApi.addListener(mGoogleApiClient, this);
+            m.debugData("Messages : Connecting with MessageApi");
         }
     }
 
@@ -57,7 +58,7 @@ class Messages implements MessageApi.MessageListener {
                         public void onResult(@NonNull MessageApi.SendMessageResult sendMessageResult) {
                             if (!sendMessageResult.getStatus().isSuccess()) {
                                 // Failed to send message
-                                Log.i("FAILED", "RESULT");
+                                m.debugData("FAILED : RESULT");
                             }
                         }
                     });
@@ -78,15 +79,18 @@ class Messages implements MessageApi.MessageListener {
 
     @Override
     public void onMessageReceived(MessageEvent messageEvent) {
+        m.debugData("onReceived : \"" + new String(messageEvent.getData()) + "\"");
         if (messageEvent.getPath().equals(API_PATH)) {
             //If we're the phone, we're receiving data from the watch. Send it to the server!
             if (m.getType().equals("PHONE")) {
                 m.send(new String(messageEvent.getData()));
+                m.debugData("onReceived : PHONE : Passing along data");
             }
 
             //If we're the watch, we're receiving data from the phone. Parse it!
             else if (m.getType().equals("WEARABLE")) {
                 m.parseCommands(new String(messageEvent.getData()));
+                m.debugData("onReceived : WEARABLE : Parsing data");
             }
         }
     }
