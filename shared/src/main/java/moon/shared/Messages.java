@@ -13,38 +13,41 @@ import com.google.android.gms.wearable.Wearable;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 
 /**
  * Created by Moon on 6/30/2017.
  * This class handles communication between the watch and the phone
  */
 
-public class Messages implements MessageApi.MessageListener {
+class Messages implements MessageApi.MessageListener {
 
-    private String nodeId = "";
     private GoogleApiClient mGoogleApiClient;
     private MyClientTask m;
 
+    private boolean connecting = false;
+
     private static final String API_PATH = "/moon_lights";
 
-    public Messages(MyClientTask m) {
+    Messages(MyClientTask m) {
         this.m = m;
     }
 
-    public void connect(Context c) {
-        mGoogleApiClient = new GoogleApiClient.Builder(c)
-                .addApi(Wearable.API)
-                .build();
-        mGoogleApiClient.connect();
-        Wearable.MessageApi.addListener(mGoogleApiClient, this);
+    void connect(Context c) {
+        if (!connecting) {
+            connecting = true;
+            mGoogleApiClient = new GoogleApiClient.Builder(c)
+                    .addApi(Wearable.API)
+                    .build();
+            mGoogleApiClient.connect();
+            Wearable.MessageApi.addListener(mGoogleApiClient, this);
+        }
     }
 
-    public boolean isConnected() {
+    boolean isConnected() {
         return mGoogleApiClient.isConnected();
     }
 
-    public void send(final String s) {
+    void send(final String s) {
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -56,9 +59,6 @@ public class Messages implements MessageApi.MessageListener {
                                 // Failed to send message
                                 Log.i("FAILED", "RESULT");
                             }
-                            else if (sendMessageResult.getStatus().isSuccess()) {
-                                //Log.i("SUCCESS", node);
-                            }
                         }
                     });
                 }
@@ -67,7 +67,7 @@ public class Messages implements MessageApi.MessageListener {
     }
 
     private Collection<String> getNodes() {
-        HashSet<String> results = new HashSet<String>();
+        HashSet<String> results = new HashSet<>();
         NodeApi.GetConnectedNodesResult nodes =
                 Wearable.NodeApi.getConnectedNodes(mGoogleApiClient).await();
         for (Node node : nodes.getNodes()) {
@@ -79,7 +79,6 @@ public class Messages implements MessageApi.MessageListener {
     @Override
     public void onMessageReceived(MessageEvent messageEvent) {
         if (messageEvent.getPath().equals(API_PATH)) {
-
             //If we're the phone, we're receiving data from the watch. Send it to the server!
             if (m.getType().equals("PHONE")) {
                 m.send(new String(messageEvent.getData()));

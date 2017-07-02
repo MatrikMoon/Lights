@@ -9,8 +9,6 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ToggleButton;
 
-import moon.shared.Messages;
-
 import moon.shared.BaseToggleActivity;
 import moon.shared.MyClientTask;
 
@@ -19,7 +17,6 @@ public class MainActivity extends WearableActivity implements BaseToggleActivity
     private BoxInsetLayout mContainerView;
     private ToggleButton tb;
 
-    //m = new MyClientTask("192.168.1.126", 9875);
     MyClientTask m;
 
     //Kill networking when we go out of focus
@@ -35,8 +32,8 @@ public class MainActivity extends WearableActivity implements BaseToggleActivity
         setContentView(R.layout.activity_main);
         setAmbientEnabled();
 
-        mContainerView = (BoxInsetLayout) findViewById(R.id.container);
-        tb = (ToggleButton) findViewById(R.id.toggleButton);
+        mContainerView = findViewById(R.id.container);
+        tb = findViewById(R.id.toggleButton);
 
         tb.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -62,8 +59,6 @@ public class MainActivity extends WearableActivity implements BaseToggleActivity
             if ((m == null) || !m.isConnected()) {
                 m = new MyClientTask(this, "192.168.1.101", 10150);
                 m.execute();
-
-                Log.i("NEW TASK", "CREATED");
             }
 
             //Set status of toggle on resume/create
@@ -78,48 +73,6 @@ public class MainActivity extends WearableActivity implements BaseToggleActivity
             e.printStackTrace();
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     //Sets the state of the toggle button
     public void setToggle(final boolean b) {

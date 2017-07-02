@@ -3,7 +3,6 @@ package moon.lightsphone;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.Parcelable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -13,7 +12,7 @@ import android.widget.ToggleButton;
 import moon.shared.BaseToggleActivity;
 import moon.shared.MyClientTask;
 
-public class MainActivity extends AppCompatActivity implements BaseToggleActivity{
+public class MainActivity extends AppCompatActivity implements BaseToggleActivity {
 
     private ToggleButton tb;
 
@@ -35,8 +34,8 @@ public class MainActivity extends AppCompatActivity implements BaseToggleActivit
         tb = (ToggleButton) findViewById(R.id.toggleButton);
 
         //Sigh, let's get this out of the way
-        watchService.m = this;
-        startService(new Intent(this, watchService.class));
+        watchService w = new watchService(this);
+        startService(new Intent(this, w.getClass()));
 
         tb.setOnClickListener(new View.OnClickListener() {
             @Override
