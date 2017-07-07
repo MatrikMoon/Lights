@@ -2,6 +2,8 @@ package moon.shared;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.pm.ProviderInfo;
 import android.os.Looper;
 import android.util.Log;
 
@@ -11,6 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 
 /**
@@ -51,7 +54,7 @@ public class MyClientTask {
     }
 
     //Pass along debug info
-    public void debugData(String data) {
+    void debugData(String data) {
         activity.debugData(data);
     }
 
@@ -92,13 +95,20 @@ public class MyClientTask {
                             parseCommands(s[0]);
                         } catch (Exception e) {
                             e.printStackTrace();
-                            ExceptionTools.stackTraceToString(e);
+                            debugData(ExceptionTools.stackTraceToString(e));
                         }
                         byteArrayOutputStream.reset();
                     }
+                    //If it's a timeout exception, we're good for another round
+                    catch (SocketTimeoutException e) {
+                        //e.printStackTrace();
+                        //debugData(ExceptionTools.stackTraceToString(e));
+                    }
+                    //If not, it's time for this thread to die
                     catch (Exception e) {
                         e.printStackTrace();
-                        ExceptionTools.stackTraceToString(e);
+                        debugData(ExceptionTools.stackTraceToString(e));
+                        return;
                     }
                 }
             }
@@ -111,8 +121,26 @@ public class MyClientTask {
     void parseCommands(String response) {
         //If we're the phone, broadcast the message off to a potential awaiting watch
         if (getType().equals("PHONE")) {
-            m.send(response);
-            debugData("parseCommands : broadcasting \"" + response + "\" back to watch");
+            //If the watch is requesting preferences, send them
+            if (response.equals("REQUEST_PREFS")) {
+                m.send("isRice " + (activity.getIsRice() ? "ON" : "OFF"));
+            }
+            else {
+                m.send(response);
+                debugData("parseCommands : broadcasting \"" + response + "\" back to watch");
+            }
+        }
+        //If we're the wearable, we need to accept incoming prefs updates.
+        //This isn't TOO important considering the watch will be using MessageApi the majority
+        //of the time, but if we accept these updates, when the phone dies, the watch
+        //will know what our settings are so it can at least have a chance at connecting to the
+        //right address.
+        else if (getType().equals("WEARABLE")) {
+            if (response.startsWith("isRice ")) {
+                String r = response.split(" ")[1];
+                SharedPreferences s = ((Activity)activity).getPreferences(Context.MODE_PRIVATE);
+                s.edit().putBoolean("rice", r.equals("ON")).commit();
+            }
         }
         if (response.equals("ON")) {
             activity.setToggle(true);
@@ -127,12 +155,7 @@ public class MyClientTask {
         debugData("send : sending \"" + string + "\" to server");
         //If we're using MessageApi, send it as such
         if (wearableFallback) {
-            if ((m == null) || !m.isConnected()) {
-                m = new Messages(this);
-                m.connect((Activity)activity); //Cast activity to activity. Can't seem to figure out how to do it another way while leaving
-                                                //the specific types of activities alone in the MainActivity files
-            }
-            m.send(string);
+            sendThroughMessageApi(string);
         }
         //If not, do it the normal way
         else {
@@ -150,6 +173,16 @@ public class MyClientTask {
         }
     }
 
+    //Send comand specifically to wear
+    public void sendThroughMessageApi(final String s) {
+        if ((m == null) || !m.isConnected()) {
+            m = new Messages(this);
+            m.connect((Activity)activity); //Cast activity to activity. Can't seem to figure out how to do it another way while leaving
+                                            //the specific types of activities alone in the MainActivity files
+        }
+        m.send(s);
+    }
+
     //Low send is a method to make the send() method more concise. Do not use.
     private void low_send(String string) {
         try {
@@ -157,7 +190,7 @@ public class MyClientTask {
             os.flush();
         } catch (Exception e) {
             e.printStackTrace();
-            ExceptionTools.stackTraceToString(e);
+            debugData(ExceptionTools.stackTraceToString(e));
         }
     }
 
@@ -185,7 +218,7 @@ public class MyClientTask {
                             connected = true;
                         } catch (Exception e) {
                             e.printStackTrace();
-                            ExceptionTools.stackTraceToString(e);
+                            debugData(ExceptionTools.stackTraceToString(e));
                             /*
                             if (e instanceof java.net.ConnectException && getType().equals("WEARABLE")) {
                                 //There must be no connection to the phone OR the network in this case
@@ -200,7 +233,7 @@ public class MyClientTask {
                                     Thread.sleep(10000);
                                 } catch (Exception ex) {
                                     e.printStackTrace();
-                                    ExceptionTools.stackTraceToString(e);
+                                    debugData(ExceptionTools.stackTraceToString(e));
                                 }
                             }
                         }
@@ -227,10 +260,11 @@ public class MyClientTask {
                         m.connect((Context)instance.activity);
 
                         send("REQUEST_STATUS");
+                        send("REQUEST_PREFS");
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
-                    ExceptionTools.stackTraceToString(e);
+                    debugData(ExceptionTools.stackTraceToString(e));
                 }
             }
         });
@@ -254,7 +288,7 @@ public class MyClientTask {
                 socket.close();
             } catch (IOException e) {
                 e.printStackTrace();
-                ExceptionTools.stackTraceToString(e);
+                debugData(ExceptionTools.stackTraceToString(e));
             }
         }
     }

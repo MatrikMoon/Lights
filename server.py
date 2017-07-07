@@ -3,6 +3,7 @@ import RPi.GPIO as GPIO
 import sys
 import socket
 import threading
+import os
 
 status = "OFF"
 clients = []
@@ -24,7 +25,7 @@ def setStatus(newStatus):
 #Parse commands received from clients
 def parseCommands(data, client):
     global status
-    print(clients)
+    #print(clients)
     if data == "ON":
         setStatus("ON")
     elif data == "OFF":
@@ -33,6 +34,8 @@ def parseCommands(data, client):
         send(status, client)
     elif data == "SHUTDOWN":
         return "SHUTDOWN"
+    elif data == "REBOOT":
+        return "REBOOT"
     else:
         print(data)
         clients.remove(client)
@@ -65,13 +68,18 @@ def receiver(client):
                 client.close()
                 sock.close()
                 return
+            elif ret == "REBOOT":
+                client.close()
+                sock.close()
+                os.system("reboot")
+                return
         except Exception as ex:
                 template = "An exception of type {0} occurred. Arguments:\n{1!r}"
                 messge = template.format(type(ex).__name__, ex.args)
 
 #Set up socket server
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_address = ("192.168.1.101", 10150)
+server_address = ("192.168.1.126", 9875)
 sock.bind(server_address)
 sock.listen(5) #5 is an arbitrary value, according to docs it stands for "Number of unauthorized connections before the server stops listening"
 

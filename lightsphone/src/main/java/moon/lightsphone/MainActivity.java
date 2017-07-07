@@ -1,16 +1,23 @@
 package moon.lightsphone;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.text.InputType;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ToggleButton;
+
+import java.lang.reflect.Field;
 
 import moon.shared.BaseToggleActivity;
 import moon.shared.ExceptionTools;
@@ -24,13 +31,6 @@ public class MainActivity extends AppCompatActivity implements BaseToggleActivit
 
     MyClientTask m;
 
-    //Kill networking when we go out of focus
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        MyClientTask.killAll();
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -39,6 +39,10 @@ public class MainActivity extends AppCompatActivity implements BaseToggleActivit
         tb = (ToggleButton) findViewById(R.id.toggleButton);
         debugText = (EditText) findViewById(R.id.debugText);
         rebootButton = (Button) findViewById(R.id.rebootButton);
+        Toolbar myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
+
+        setSupportActionBar(myToolbar);
+        makeActionOverflowMenuShown();
 
         rebootButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -47,15 +51,15 @@ public class MainActivity extends AppCompatActivity implements BaseToggleActivit
             }
         });
 
+        updateManager.updateIfNotUpToDate(this);
+
         //Sigh, let's get this out of the way
         if (!watchService.isRunning()) {
-            watchService w = new watchService(this);
-            startService(new Intent(this, w.getClass()));
+            watchService.m = this; //Set teh service's instance of this class to this instance
+            startService(new Intent(this, watchService.class)); //Start the service and it will take care of the rest
         }
         else {
-            m = watchService.getMCT();
-            watchService.getInstance().setParent(this);
-
+            watchService.connectActivity(this); //Use the service's connect method to attach our activity and request status
         }
 
         tb.setOnClickListener(new View.OnClickListener() {
@@ -73,7 +77,7 @@ public class MainActivity extends AppCompatActivity implements BaseToggleActivit
                 }
                 catch (Exception e) {
                     e.printStackTrace();
-                    ExceptionTools.stackTraceToString(e);
+                    debugData(ExceptionTools.stackTraceToString(e));
                 }
             }
         });
@@ -88,18 +92,16 @@ public class MainActivity extends AppCompatActivity implements BaseToggleActivit
                 return true;
             }
         });
+    }
 
-        try {
-            //Only start a new task if it's not already running
-            if ((m == null) || !m.isConnected()) {
-                m = new MyClientTask(this, "192.168.1.101", 10150);
-                m.execute();
-            }
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            ExceptionTools.stackTraceToString(e);
-        }
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater mi = getMenuInflater();
+        mi.inflate(R.menu.menu, menu);
+
+        MenuItem m = menu.findItem(R.id.rice_switch);
+        m.setChecked(getIsRice());
+        return true;
     }
 
     public void debugData(final String data) {
@@ -128,5 +130,42 @@ public class MainActivity extends AppCompatActivity implements BaseToggleActivit
     //Gets the activity type
     public String getType() {
         return "PHONE";
+    }
+
+    public boolean getIsRice() {
+        return this.getPreferences(MODE_PRIVATE).getBoolean("rice", false);
+    }
+
+    @SuppressWarnings("all") //Suppress .commit() warning
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.rice_switch:
+                SharedPreferences s = this.getPreferences(MODE_PRIVATE);
+                s.edit().putBoolean("rice", !s.getBoolean("rice", false)).commit();
+                item.setChecked(getIsRice());
+                m.sendThroughMessageApi("isRice " + (getIsRice() ? "ON" : "OFF")); //Send prefs update to wear
+                return true;
+
+            default:
+                // If we got here, the user's action was not recognized.
+                // Invoke the superclass to handle it.
+                return super.onOptionsItemSelected(item);
+
+        }
+    }
+
+    //devices with hardware menu button (e.g. Samsung Note) don't show action overflow menu
+    private void makeActionOverflowMenuShown() {
+        try {
+            ViewConfiguration config = ViewConfiguration.get(this);
+            Field menuKeyField = ViewConfiguration.class.getDeclaredField("sHasPermanentMenuKey");
+            if (menuKeyField != null) {
+                menuKeyField.setAccessible(true);
+                menuKeyField.setBoolean(config, false);
+            }
+        } catch (Exception e) {
+            Log.d("DEBUG", e.getLocalizedMessage());
+        }
     }
 }

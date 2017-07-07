@@ -48,7 +48,7 @@ try:
 
 	# Connect the socket to the port where the server is listening
 	#server_address = ("192.168.1.126", 9875)
-	server_address = ("192.168.1.101", 10150)
+	server_address = ("192.168.1.126", 9875)
 	try:
 		sock.connect(server_address)
 		serverconnected = True

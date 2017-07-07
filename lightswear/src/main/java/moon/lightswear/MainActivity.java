@@ -5,6 +5,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.support.wearable.activity.WearableActivity;
 import android.support.wearable.view.BoxInsetLayout;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ToggleButton;
@@ -53,7 +54,7 @@ public class MainActivity extends WearableActivity implements BaseToggleActivity
                 }
                 catch (Exception e) {
                     e.printStackTrace();
-                    ExceptionTools.stackTraceToString(e);
+                    debugData(ExceptionTools.stackTraceToString(e));
                 }
             }
         });
@@ -71,8 +72,12 @@ public class MainActivity extends WearableActivity implements BaseToggleActivity
         try {
             //Only start a new task if it's not already running
             if ((m == null) || !m.isConnected()) {
-                m = new MyClientTask(this, "192.168.1.101", 10150);
-                m.execute();
+                if (!getIsRice()) {
+                    m = new MyClientTask(this, "192.168.1.101", 10150); //Create our own mct
+                }
+                else {
+                    m = new MyClientTask(this, "192.168.1.126", 9875); //Create our own mct
+                }m.execute();
             }
 
             //Set status of toggle on resume/create
@@ -85,7 +90,7 @@ public class MainActivity extends WearableActivity implements BaseToggleActivity
         }
         catch (Exception e) {
             e.printStackTrace();
-            ExceptionTools.stackTraceToString(e);
+            debugData(ExceptionTools.stackTraceToString(e));
         }
     }
 
@@ -97,6 +102,7 @@ public class MainActivity extends WearableActivity implements BaseToggleActivity
                 debugText.append(data + "\n");
             }
         });
+        Log.i("DEBUG", data);
     }
 
     //Sets the state of the toggle button
@@ -115,6 +121,10 @@ public class MainActivity extends WearableActivity implements BaseToggleActivity
     //Gets the activity type
     public String getType() {
         return "WEARABLE";
+    }
+
+    public boolean getIsRice() {
+        return this.getPreferences(MODE_PRIVATE).getBoolean("rice", false);
     }
 
     @Override

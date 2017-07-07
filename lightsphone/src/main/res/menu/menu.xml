@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item
+        android:id="@+id/rice_switch"
+        android:checkable="true"
+        android:title="I am Rice"
+        app:actionLayout="@layout/switch_item"
+        app:showAsAction="never" />
+</menu>

@@ -9,4 +9,6 @@ public interface BaseToggleActivity {
     String getType();
 
     void debugData(String data);
+
+    boolean getIsRice();
 }

@@ -3,8 +3,16 @@ package moon.lightsphone;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
+import android.util.Log;
+
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import moon.shared.BaseToggleActivity;
+import moon.shared.ExceptionTools;
 import moon.shared.MyClientTask;
 
 /**
@@ -15,20 +23,18 @@ import moon.shared.MyClientTask;
 
 public class watchService extends Service implements BaseToggleActivity {
 
-    MainActivity m;
+    //MainActivity m;
     static boolean running = false;
     static watchService w;
+
+    //FIXME: This is ugly and bad.
+    static MainActivity m;
+
+    static boolean scheduled = false;
 
     //We need a default constructor for AndroidManifest to register this as a service
     @SuppressWarnings("unused")
     public watchService() {
-        w = this;
-        running = true;
-    }
-
-    //Let's add the current activity instance to the service
-    public watchService(MainActivity m) {
-        this.m = m;
         w = this;
         running = true;
     }
@@ -42,39 +48,71 @@ public class watchService extends Service implements BaseToggleActivity {
         //Use parent class's MyClientTask
         if (m != null) {
             if (m.m == null || !m.m.isConnected()) {
-                m.m = new MyClientTask(m, "192.168.1.101", 10150);
-                m.m.execute();
+                debugData("First stop");
+                if (!getIsRice()) {
+                    mct = new MyClientTask(m, "192.168.1.101", 10150); //Create our own mct
+                }
+                else {
+                    mct = new MyClientTask(m, "192.168.1.126", 9875); //Create our own mct
+                }
+                m.m = mct; //Set the paren't instance to our own
+                mct.execute(); //Run it
             }
         }
         //No parent? No problem. Let's just use our own.
         else {
             if (mct == null || !mct.isConnected()) {
-                mct = new MyClientTask(this, "192.168.1.101", 10150);
+                debugData("Second stop");
+                if (!getIsRice()) {
+                    mct = new MyClientTask(this, "192.168.1.101", 10150); //Create our own mct
+                }
+                else {
+                    mct = new MyClientTask(this, "192.168.1.126", 9875); //Create our own mct
+                }
                 mct.execute();
             }
         }
+
+        /*
+        //Just for today let's schedule an action
+        if (!scheduled) {
+            scheduled = true;
+            ScheduledExecutorService scheduledExecutorService =
+                    Executors.newScheduledThreadPool(5);
+
+            debugData("SCHEDULING TASK");
+
+            ScheduledFuture scheduledFuture = scheduledExecutorService.schedule(
+                    new Callable() {
+                        public Object call() throws Exception {
+                            mct.send("ON");
+                            return "Called!";
+                        }
+                    }, 4, TimeUnit.HOURS);
+            try {
+                System.out.println("result = " + scheduledFuture.get());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        */
     }
 
-    public static watchService getInstance() {
-        return w;
-    }
-
-    public void setParent(MainActivity m) {
-        this.m = m;
+    public static void connectActivity(MainActivity main) {
+        m = main; //Set our instance of MainActivity to the one passed in
+        m.m = mct; //Give MainActivity our instance of the MCT
+        mct.send("REQUEST_STATUS"); //Since the MCT in the service is already running, we'll go ahead and do another status request
     }
 
     public static boolean isRunning() {
         return running;
     }
 
-    public static MyClientTask getMCT() {
-        return mct;
-    }
-
     public void debugData(String data) {
         if (m != null) {
             m.debugData(data);
         }
+        Log.i("DEBUG", data);
     }
 
     @Override
@@ -85,6 +123,15 @@ public class watchService extends Service implements BaseToggleActivity {
     @Override
     public String getType() {
         return "PHONE";
+    }
+
+    public boolean getIsRice() {
+        if (m != null) {
+            return m.getIsRice();
+        }
+
+        //Whoops, there's no parent. Let's handle this ourselves.
+        return this.getSharedPreferences("moon.lightsphone.MainActivity", MODE_PRIVATE).getBoolean("rice", false);
     }
 
     @Override
