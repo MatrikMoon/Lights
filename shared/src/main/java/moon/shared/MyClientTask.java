@@ -3,8 +3,8 @@ package moon.shared;
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.content.pm.ProviderInfo;
 import android.os.Looper;
+import android.system.ErrnoException;
 import android.util.Log;
 
 import java.io.BufferedOutputStream;
@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 
@@ -73,11 +74,12 @@ public class MyClientTask {
         this.state = state;
     }
 
-    //Return the typ eof
+    //Return the type of device the current code is running on
     String getType() {
         return activity.getType();
     }
 
+    //Receive data from socket
     private void receive(final InputStream is) {
         Thread receiveThread = new Thread() {
             @Override
@@ -94,19 +96,26 @@ public class MyClientTask {
                             String[] s = response.split("<EOF>");
                             parseCommands(s[0]);
                         } catch (Exception e) {
-                            e.printStackTrace();
                             debugData(ExceptionTools.stackTraceToString(e));
                         }
                         byteArrayOutputStream.reset();
                     }
                     //If it's a timeout exception, we're good for another round
                     catch (SocketTimeoutException e) {
-                        //e.printStackTrace();
-                        //debugData(ExceptionTools.stackTraceToString(e));
+                        //Standard socket timeout. Let's keep 'er movin.
+                    }
+                    catch (IOException e) {
+                        //This actually occurs pretty often. If there's network lag, or the device goes out of range while
+                        //connected, a TIMEOUT will occur. Let's catch that and throw us back into another connection, eh?
+                        debugData("ETIMEOUT: " + ExceptionTools.stackTraceToString(e));
+                        connected = false; //Whoops! We're not connected anymore. Let the rest of the object know.
+                        execute(); //Taking into account that this is threaded, this thread should die once the execute() one starts, and
+                                    //beyond that, the execute() one will die when it reconnects.
+                        return;
                     }
                     //If not, it's time for this thread to die
                     catch (Exception e) {
-                        e.printStackTrace();
+                        //Teh fook?
                         debugData(ExceptionTools.stackTraceToString(e));
                         return;
                     }
@@ -139,7 +148,7 @@ public class MyClientTask {
             if (response.startsWith("isRice ")) {
                 String r = response.split(" ")[1];
                 SharedPreferences s = ((Activity)activity).getPreferences(Context.MODE_PRIVATE);
-                s.edit().putBoolean("rice", r.equals("ON")).commit();
+                s.edit().putBoolean("rice", r.equals("ON")).apply();
             }
         }
         if (response.equals("ON")) {
@@ -173,7 +182,7 @@ public class MyClientTask {
         }
     }
 
-    //Send comand specifically to wear
+    //Send command specifically to wear
     public void sendThroughMessageApi(final String s) {
         if ((m == null) || !m.isConnected()) {
             m = new Messages(this);

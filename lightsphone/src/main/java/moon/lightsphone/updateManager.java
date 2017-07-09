@@ -11,7 +11,7 @@ import java.io.File;
  */
 
 class updateManager {
-    static int currentVersion = 3;
+    static int currentVersion = 6;
 
     private static boolean isUpToDate() {
         String availText = moonNetworking.downloadText_MOON("https://pastebin.com/raw/YYdQrj29");

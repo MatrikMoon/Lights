@@ -72,36 +72,35 @@ public class watchService extends Service implements BaseToggleActivity {
                 mct.execute();
             }
         }
-
-        /*
-        //Just for today let's schedule an action
-        if (!scheduled) {
-            scheduled = true;
-            ScheduledExecutorService scheduledExecutorService =
-                    Executors.newScheduledThreadPool(5);
-
-            debugData("SCHEDULING TASK");
-
-            ScheduledFuture scheduledFuture = scheduledExecutorService.schedule(
-                    new Callable() {
-                        public Object call() throws Exception {
-                            mct.send("ON");
-                            return "Called!";
-                        }
-                    }, 4, TimeUnit.HOURS);
-            try {
-                System.out.println("result = " + scheduledFuture.get());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        */
     }
 
     public static void connectActivity(MainActivity main) {
         m = main; //Set our instance of MainActivity to the one passed in
         m.m = mct; //Give MainActivity our instance of the MCT
         mct.send("REQUEST_STATUS"); //Since the MCT in the service is already running, we'll go ahead and do another status request
+    }
+
+    //When connected to the lights, this toggle allows the widget to easily toggle the state
+    public static void widgetToggle() {
+        try {
+            if (getState().equals("OFF")) {
+                mct.send("ON");
+                mct.setState("ON");
+            }
+            else if (getState().equals("ON")) {
+                mct.send("OFF");
+                mct.setState("OFF");
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            //debugData(ExceptionTools.stackTraceToString(e));
+        }
+    }
+
+    //Returns the current lights state, if it can
+    public static String getState() {
+        return (mct != null ? mct.getState() : "OFF");
     }
 
     public static boolean isRunning() {
@@ -140,5 +139,6 @@ public class watchService extends Service implements BaseToggleActivity {
         if (m != null) {
             m.setToggle(toggle);
         }
+        ButtonWidget.setState(toggle ? "ON" : "OFF", this);
     }
 }
